@@ -20,6 +20,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView mQuestionTextView;
     private static final String TAG = "QuizActivity";
     private static final String KEY_INDEX = "index";
+    private boolean mIsCheater = false;
 
     private Question[] mQuestionBank = new Question[] {
             new Question(R.string.question_africa, false),
@@ -68,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 mCurrentIndex = (++mCurrentIndex) % mQuestionBank.length;
+                mIsCheater = false;
                 updateQuestion();
             }
         });
@@ -89,6 +91,22 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onSaveInstanceStatue(Bundle) called");
         outState.putInt(KEY_INDEX, mCurrentIndex);
     }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != RESULT_OK) {
+            return;
+        }
+
+        if (requestCode == REQUEST_CODE_CHEAT) {
+            if (data == null) {
+                return;
+            }
+            mIsCheater = CheatActivity.wasAnswerShown(data);
+        }
+    }
+
 
     @Override
     protected void onStart() {
@@ -128,6 +146,10 @@ public class MainActivity extends AppCompatActivity {
     private void checkAnswer(boolean userPressedTrue) {
         boolean answerIsTrue = mQuestionBank[mCurrentIndex].isAnswerTrue() == userPressedTrue;
         int messageToastId = answerIsTrue ? R.string.correct_toast : R.string.incorrect_toast;
+
+        if (mIsCheater) {
+            messageToastId = R.string.judgment_toast;
+        }
 
         Toast.makeText(this, messageToastId, Toast.LENGTH_SHORT).show();
     }
